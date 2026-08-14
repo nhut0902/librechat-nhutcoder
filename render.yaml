@@ -1,0 +1,42 @@
+# Render Blueprint for LibreChat deployment
+# Pre-built Docker image + custom librechat.yaml with MCP servers (Zernio, Composio, Cloudinary)
+services:
+  - type: web
+    name: librechat-nhutcoder
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: HOST
+        value: 0.0.0.0
+      # MongoDB Atlas URI (REQUIRED — set in dashboard)
+      - key: MONGO_URI
+        sync: false
+      # Zernio API key (baked in, but allow override)
+      - key: ZERNIO_API_KEY
+        value: sk_bb6c27fe7e26d4c5a24ffed5d1c8969ffed0cdfb1592264c01cc7739a4a6ba05
+      # Composio API key (set after signup at composio.dev)
+      - key: COMPOSIO_API_KEY
+        sync: false
+      # Cloudinary (image upload)
+      - key: CLOUDINARY_CLOUD_NAME
+        value: tfbfthxq
+      - key: CLOUDINARY_API_KEY
+        value: "985851864881878"
+      - key: CLOUDINARY_API_SECRET
+        value: M-lCWQlBFYUzeYxNlsmNxLGN5LQ
+      - key: CLOUDINARY_URL
+        value: cloudinary://985851864881878:M-lCWQlBFYUzeYxNlsmNxLGN5LQ@tfbfthxq
+      # Domain (update after deploy to your Render URL)
+      - key: DOMAIN_CLIENT
+        value: https://librechat-nhutcoder.onrender.com
+      - key: DOMAIN_SERVER
+        value: https://librechat-nhutcoder.onrender.com

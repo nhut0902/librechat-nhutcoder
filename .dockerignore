@@ -1,0 +1,10 @@
+.git
+.gitignore
+node_modules
+dist
+.env.local
+.DS_Store
+*.log
+# Keep our .env (it has baked-in secrets) but ignore user-specific overrides
+.env.local
+.env.production
