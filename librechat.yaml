@@ -6,7 +6,7 @@ version: 1.3.13
 
 cache: true
 
-# File storage: use local (Render volume) — we'll use Cloudinary MCP for image fetching
+# File storage: use local (Render volume) — Cloudinary MCP for image fetching
 fileStrategy: local
 
 # Interface config
@@ -78,7 +78,6 @@ interface:
 mcpServers:
   # ── Zernio: AI social media management ──
   # Post/schedule to TikTok, Facebook, Instagram, YouTube, LinkedIn, Twitter, Threads.
-  # API key: ${ZERNIO_API_KEY}
   zernio:
     type: http
     url: https://mcp.zernio.com/mcp
@@ -88,7 +87,6 @@ mcpServers:
 
   # ── Composio: 1000+ app integrations for AI automation ──
   # Connect Gmail, Slack, Notion, GitHub, Calendar, etc. via single MCP server.
-  # API key: ${COMPOSIO_API_KEY}
   composio:
     type: http
     url: https://mcp.composio.dev/mcp
@@ -105,30 +103,3 @@ mcpServers:
     headers:
       cloudinary-url: "cloudinary://${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}@tfbfthxq"
     timeout: 60000
-
-# MCP user permissions
-mcpUserPermissions:
-  - use       # Allow users to use configured MCP servers
-  - create    # Allow users to create new MCP servers
-  - share     # Allow users to share MCP servers with others
-
-# Trust dialog for new MCP servers
-mcpTrustDialog:
-  enabled: true
-  trustCheckbox:
-    label:
-      en: 'I understand and want to continue'
-    subLabel:
-      en: |
-        MCP servers (Zernio, Composio, Cloudinary) can post to social media and upload images on your behalf.
-        Only trust servers you control.
-
-# App title
-appTitle: "NhutCoder AI Studio"
-
-# Registration — disable public signup (admin creates accounts)
-registration:
-  socialLogins: ["google", "github", "facebook"]
-
-# Allow shared links
-allowSharedLinks: true
