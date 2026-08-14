@@ -1,0 +1,134 @@
+# LibreChat configuration for NhutCoder deployment
+# MCP servers: Zernio (social media posting) + Composio (automation) + Cloudinary (image upload)
+# Reference: https://www.librechat.ai/docs/configuration/librechat_yaml
+
+version: 1.3.13
+
+cache: true
+
+# File storage: use local (Render volume) — we'll use Cloudinary MCP for image fetching
+fileStrategy: local
+
+# Interface config
+interface:
+  endpoints:
+    - name: "OpenAI"
+      apiKey: "${OPENAI_API_KEY}"
+      models:
+        default: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
+        fetch: true
+      titleConvo: true
+      titleMethod: "client"
+      titleModel: "gpt-4o-mini"
+      summarize: false
+      summaryModel: "gpt-4o-mini"
+      forcePrompt: false
+      modelDisplayLabel: "OpenAI"
+    - name: "Anthropic"
+      apiKey: "${ANTHROPIC_API_KEY}"
+      models:
+        default: ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"]
+        fetch: true
+      titleConvo: true
+      titleMethod: "client"
+      titleModel: "claude-3-5-haiku-20241022"
+      summarize: false
+      summaryModel: "claude-3-5-haiku-20241022"
+      modelDisplayLabel: "Anthropic"
+    - name: "Google"
+      apiKey: "${GOOGLE_KEY}"
+      models:
+        default: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash-exp"]
+        fetch: true
+      titleConvo: true
+      titleMethod: "client"
+      titleModel: "gemini-1.5-flash"
+      summarize: false
+      summaryModel: "gemini-1.5-flash"
+      modelDisplayLabel: "Google"
+    - name: "Groq"
+      apiKey: "${GROQ_API_KEY}"
+      baseURL: "https://api.groq.com/openai/v1"
+      models:
+        default: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
+        fetch: true
+      titleConvo: true
+      titleMethod: "client"
+      titleModel: "llama-3.1-8b-instant"
+      summarize: false
+      summaryModel: "llama-3.1-8b-instant"
+      modelDisplayLabel: "Groq"
+      addParams:
+        extra_body: {}
+    - name: "OpenRouter"
+      apiKey: "${OPENROUTER_API_KEY}"
+      baseURL: "https://openrouter.ai/api/v1"
+      models:
+        default: ["anthropic/claude-3.5-sonnet", "openai/gpt-4o", "google/gemini-2.0-flash-exp:free"]
+        fetch: true
+      titleConvo: true
+      titleMethod: "client"
+      titleModel: "openai/gpt-4o-mini"
+      summarize: false
+      summaryModel: "openai/gpt-4o-mini"
+      modelDisplayLabel: "OpenRouter"
+
+# MCP (Model Context Protocol) servers
+# These give the LLM tools to: post to social media (Zernio), automate tasks (Composio), upload images (Cloudinary)
+mcpServers:
+  # ── Zernio: AI social media management ──
+  # Post/schedule to TikTok, Facebook, Instagram, YouTube, LinkedIn, Twitter, Threads.
+  # API key: ${ZERNIO_API_KEY}
+  zernio:
+    type: http
+    url: https://mcp.zernio.com/mcp
+    headers:
+      Authorization: "Bearer ${ZERNIO_API_KEY}"
+    timeout: 60000
+
+  # ── Composio: 1000+ app integrations for AI automation ──
+  # Connect Gmail, Slack, Notion, GitHub, Calendar, etc. via single MCP server.
+  # API key: ${COMPOSIO_API_KEY}
+  composio:
+    type: http
+    url: https://mcp.composio.dev/mcp
+    headers:
+      x-api-key: "${COMPOSIO_API_KEY}"
+    timeout: 60000
+
+  # ── Cloudinary: Image upload & management ──
+  # Used by AI to: fetch image from web → upload to Cloudinary → get direct URL → pass to Zernio for posting.
+  # Cloud name: tfbfthxq (free tier)
+  cloudinary-asset-mgmt:
+    type: http
+    url: https://asset-management.mcp.cloudinary.com/mcp
+    headers:
+      cloudinary-url: "cloudinary://${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}@tfbfthxq"
+    timeout: 60000
+
+# MCP user permissions
+mcpUserPermissions:
+  - use       # Allow users to use configured MCP servers
+  - create    # Allow users to create new MCP servers
+  - share     # Allow users to share MCP servers with others
+
+# Trust dialog for new MCP servers
+mcpTrustDialog:
+  enabled: true
+  trustCheckbox:
+    label:
+      en: 'I understand and want to continue'
+    subLabel:
+      en: |
+        MCP servers (Zernio, Composio, Cloudinary) can post to social media and upload images on your behalf.
+        Only trust servers you control.
+
+# App title
+appTitle: "NhutCoder AI Studio"
+
+# Registration — disable public signup (admin creates accounts)
+registration:
+  socialLogins: ["google", "github", "facebook"]
+
+# Allow shared links
+allowSharedLinks: true
