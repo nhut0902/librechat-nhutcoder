@@ -39,7 +39,7 @@ interface:
       modelDisplayLabel: "Anthropic"
 
     - name: "Google"
-      apiKey: user_provided
+      apiKey: "${GOOGLE_KEY}"
       models:
         default: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash-exp"]
         fetch: true
@@ -51,7 +51,7 @@ interface:
       modelDisplayLabel: "Google"
 
     - name: "Groq"
-      apiKey: user_provided
+      apiKey: "${GROQ_API_KEY}"
       baseURL: "https://api.groq.com/openai/v1"
       models:
         default:
@@ -70,7 +70,7 @@ interface:
         extra_body: {}
 
     - name: "OpenRouter"
-      apiKey: user_provided
+      apiKey: "${OPENROUTER_API_KEY}"
       baseURL: "https://openrouter.ai/api/v1"
       models:
         default:
@@ -88,7 +88,7 @@ interface:
       modelDisplayLabel: "OpenRouter"
 
     - name: "NVIDIA NIM"
-      apiKey: user_provided
+      apiKey: "${NVIDIA_API_KEY}"
       baseURL: "https://integrate.api.nvidia.com/v1"
       models:
         default:
