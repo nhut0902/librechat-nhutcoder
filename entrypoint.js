@@ -1,4 +1,4 @@
-// entrypoint.js — Run LibreChat with clear setup instructions on Mongo failure.
+// entrypoint.js — Run LibreChat with clear setup instructions on Mongo failures.
 const http = require('http');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -18,63 +18,53 @@ logLine('MONGO_URI: ' + (mongoUri ? mongoUri.replace(/:[^:@]+@/, ':***@') : 'NOT
 logLine('NODE_ENV: ' + process.env.NODE_ENV);
 logLine('');
 
-// Check if MONGO_URI looks valid
-const hasValidMongo = mongoUri.startsWith('mongodb://') || mongoUri.startsWith('mongodb+srv://');
-const isPlaceholder = mongoUri.includes('placeholder') || mongoUri.includes('example') ||
-                       mongoUri.includes('your-') || mongoUri.includes('<');
+// Start LibreChat
+logLine('Starting LibreChat...');
+const proc = spawn('npm', ['run', 'backend'], {
+  cwd: '/app',
+  stdio: ['ignore', 'pipe', 'pipe'],
+  env: process.env,
+});
 
-if (!hasValidMongo || isPlaceholder) {
-  logLine('⚠ MONGO_URI not configured or invalid — showing setup instructions');
-  logLine('');
-  logLine('═══════════════════════════════════════════════════════════════════');
-  logLine('  LibreChat needs MongoDB. Setup your free MongoDB Atlas:');
-  logLine('═══════════════════════════════════════════════════════════════════');
-  logLine('');
-  logLine('1. Go to: https://www.mongodb.com/cloud/atlas/register');
-  logLine('2. Signup (no credit card needed for free M0 cluster)');
-  logLine('3. Create FREE cluster (M0, 512MB, never expires)');
-  logLine('4. Database Access → Add user:');
-  logLine('   Username: librechat');
-  logLine('   Password: <your-strong-password>');
-  logLine('5. Network Access → Add IP: 0.0.0.0/0 (allow anywhere)');
-  logLine('6. Connect → Drivers → Copy connection string:');
-  logLine('   mongodb+srv://librechat:<password>@cluster0.xxxxx.mongodb.net/LibreChat');
-  logLine('7. Render Dashboard → librechat-nhutcoder service → Environment');
-  logLine('   → Update MONGO_URI = your-actual-connection-string');
-  logLine('8. Manual Deploy → Deploy latest commit');
-  logLine('');
-  logLine('Container will stay alive on /health for health checks.');
-  logLine('This page (/) shows setup instructions + LibreChat logs.');
-  logLine('═══════════════════════════════════════════════════════════════════');
+let mongoIPError = false;
+proc.stdout.on('data', d => {
+  const s = d.toString();
+  logStream.write(d);
+  if (s.includes('IP whitelist') || s.includes("isn't whitelisted") || s.includes('Could not connect to any servers')) {
+    mongoIPError = true;
+  }
+});
+proc.stderr.on('data', d => {
+  const s = d.toString();
+  logStream.write(d);
+  if (s.includes('IP whitelist') || s.includes("isn't whitelisted") || s.includes('Could not connect to any servers')) {
+    mongoIPError = true;
+  }
+});
 
-  // Still start LibreChat so user can see it fail and check logs
-  const proc = spawn('npm', ['run', 'backend'], {
-    cwd: '/app',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: process.env,
-  });
-  proc.stdout.on('data', d => logStream.write(d));
-  proc.stderr.on('data', d => logStream.write(d));
-  proc.on('exit', (code) => {
+proc.on('exit', (code) => {
+  logLine('');
+  logLine('=== LibreChat exited code=' + code + ' ===');
+  if (mongoIPError) {
     logLine('');
-    logLine('=== LibreChat exited code=' + code + ' (expected — MONGO_URI not set) ===');
-    logLine('=== Container staying alive for setup instructions ===');
-  });
-} else {
-  logLine('✓ MONGO_URI configured. Starting LibreChat...');
-  const proc = spawn('npm', ['run', 'backend'], {
-    cwd: '/app',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: process.env,
-  });
-  proc.stdout.on('data', d => logStream.write(d));
-  proc.stderr.on('data', d => logStream.write(d));
-  proc.on('exit', (code) => {
+    logLine('═══════════════════════════════════════════════════════════════════');
+    logLine('  ⚠ MongoDB Atlas IP Whitelist Issue');
+    logLine('═══════════════════════════════════════════════════════════════════');
     logLine('');
-    logLine('=== LibreChat exited code=' + code + ' ===');
-    logLine('=== Container staying alive for log retrieval ===');
-  });
-}
+    logLine('  Render uses dynamic IPs. You must allow ALL IPs in Atlas:');
+    logLine('');
+    logLine('  1. Go to: https://cloud.mongodb.com/v2/_clusters');
+    logLine('  2. Select your cluster (cluster0.y9osekz)');
+    logLine('  3. Sidebar → Network Access → Add IP Address');
+    logLine('  4. Click "ALLOW ACCESS FROM ANYWHERE" → 0.0.0.0/0');
+    logLine('  5. Confirm → wait 30s for Atlas to update');
+    logLine('  6. Render Dashboard → librechat-nhutcoder → Manual Deploy');
+    logLine('');
+    logLine('  After whitelist, LibreChat will auto-start successfully.');
+    logLine('═══════════════════════════════════════════════════════════════════');
+  }
+  logLine('=== Container staying alive for log retrieval ===');
+});
 
 // HTTP server
 const server = http.createServer((req, res) => {
