@@ -10,12 +10,13 @@ cache: true
 fileStrategy: local
 
 # Interface config
+# apiKey: user_provided (string literal) → user enters their own key in Settings → AI
 interface:
   endpoints:
     - name: "OpenAI"
-      apiKey: "${OPENAI_API_KEY}"
+      apiKey: user_provided
       models:
-        default: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
+        default: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo", "o1-preview", "o1-mini"]
         fetch: true
       titleConvo: true
       titleMethod: "client"
@@ -24,8 +25,9 @@ interface:
       summaryModel: "gpt-4o-mini"
       forcePrompt: false
       modelDisplayLabel: "OpenAI"
+
     - name: "Anthropic"
-      apiKey: "${ANTHROPIC_API_KEY}"
+      apiKey: user_provided
       models:
         default: ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"]
         fetch: true
@@ -35,8 +37,9 @@ interface:
       summarize: false
       summaryModel: "claude-3-5-haiku-20241022"
       modelDisplayLabel: "Anthropic"
+
     - name: "Google"
-      apiKey: "${GOOGLE_KEY}"
+      apiKey: user_provided
       models:
         default: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash-exp"]
         fetch: true
@@ -46,11 +49,16 @@ interface:
       summarize: false
       summaryModel: "gemini-1.5-flash"
       modelDisplayLabel: "Google"
+
     - name: "Groq"
-      apiKey: "${GROQ_API_KEY}"
+      apiKey: user_provided
       baseURL: "https://api.groq.com/openai/v1"
       models:
-        default: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
+        default:
+          - "llama-3.3-70b-versatile"
+          - "llama-3.1-8b-instant"
+          - "mixtral-8x7b-32768"
+          - "gemma2-9b-it"
         fetch: true
       titleConvo: true
       titleMethod: "client"
@@ -60,11 +68,17 @@ interface:
       modelDisplayLabel: "Groq"
       addParams:
         extra_body: {}
+
     - name: "OpenRouter"
-      apiKey: "${OPENROUTER_API_KEY}"
+      apiKey: user_provided
       baseURL: "https://openrouter.ai/api/v1"
       models:
-        default: ["anthropic/claude-3.5-sonnet", "openai/gpt-4o", "google/gemini-2.0-flash-exp:free"]
+        default:
+          - "anthropic/claude-3.5-sonnet"
+          - "openai/gpt-4o"
+          - "openai/gpt-4o-mini"
+          - "google/gemini-2.0-flash-exp:free"
+          - "meta-llama/llama-3.3-70b-instruct"
         fetch: true
       titleConvo: true
       titleMethod: "client"
@@ -72,6 +86,29 @@ interface:
       summarize: false
       summaryModel: "openai/gpt-4o-mini"
       modelDisplayLabel: "OpenRouter"
+
+    - name: "NVIDIA NIM"
+      apiKey: user_provided
+      baseURL: "https://integrate.api.nvidia.com/v1"
+      models:
+        default:
+          - "meta/llama-3.3-70b-instruct"
+          - "meta/llama-3.1-405b-instruct"
+          - "meta/llama-3.1-70b-instruct"
+          - "nvidia/llama-3.1-nemotron-70b-instruct"
+          - "mistralai/mixtral-8x22b-instruct-v0.1"
+          - "google/gemma-2-27b-it"
+          - "microsoft/phi-3-medium-4k-instruct"
+          - "deepseek-ai/deepseek-r1"
+        fetch: true
+      titleConvo: true
+      titleMethod: "client"
+      titleModel: "meta/llama-3.1-70b-instruct"
+      summarize: false
+      summaryModel: "meta/llama-3.1-70b-instruct"
+      modelDisplayLabel: "NVIDIA NIM"
+      addParams:
+        extra_body: {}
 
 # MCP (Model Context Protocol) servers
 # These give the LLM tools to: post to social media (Zernio), automate tasks (Composio), upload images (Cloudinary)
