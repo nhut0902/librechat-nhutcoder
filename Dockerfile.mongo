@@ -1,0 +1,11 @@
+# MongoDB on Render — bind to $PORT (10000)
+# Uses official mongo:8.0 image + custom entrypoint
+FROM mongo:8.0
+
+# Mongo doesn't honor PORT env by default. We need to pass --port to mongod.
+# Also need a writable data dir.
+RUN mkdir -p /data/db /data/configdb && chmod -R 1777 /data
+
+# Override entrypoint to pass port
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["--port", "10000", "--bind_ip_all", "--noauth"]
