@@ -1,4 +1,5 @@
-// entrypoint.js — Run LibreChat with clear setup instructions on Mongo failures.
+// entrypoint.js — Run LibreChat on Render PORT (10000) directly.
+// If LibreChat crashes, fall back to log+health server on same port.
 const http = require('http');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -18,8 +19,32 @@ logLine('MONGO_URI: ' + (mongoUri ? mongoUri.replace(/:[^:@]+@/, ':***@') : 'NOT
 logLine('NODE_ENV: ' + process.env.NODE_ENV);
 logLine('');
 
-// Start LibreChat
-logLine('Starting LibreChat...');
+// IMPORTANT: LibreChat reads PORT env var directly and binds to it.
+// We just start it. Our log+health server will only start IF LibreChat exits.
+let libreChatStarted = false;
+let logServerStarted = false;
+
+function startLogServer() {
+  if (logServerStarted) return;
+  logServerStarted = true;
+  const server = http.createServer((req, res) => {
+    if (req.url === '/health' || req.url === '/healthz') {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('OK\n');
+      return;
+    }
+    let body = '(no log yet)';
+    try { body = fs.readFileSync(LOG, 'utf8'); } catch (e) {}
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(body);
+  });
+  server.listen(PORT, '0.0.0.0', () => {
+    logLine('Log+health server listening on ' + PORT + ' (fallback mode)');
+  });
+}
+
+logLine('Starting LibreChat (binds to PORT ' + PORT + ')...');
+
 const proc = spawn('npm', ['run', 'backend'], {
   cwd: '/app',
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -30,6 +55,9 @@ let mongoIPError = false;
 proc.stdout.on('data', d => {
   const s = d.toString();
   logStream.write(d);
+  if (s.includes('Server listening') || s.includes('listening on') || s.includes('ready')) {
+    libreChatStarted = true;
+  }
   if (s.includes('IP whitelist') || s.includes("isn't whitelisted") || s.includes('Could not connect to any servers')) {
     mongoIPError = true;
   }
@@ -37,6 +65,9 @@ proc.stdout.on('data', d => {
 proc.stderr.on('data', d => {
   const s = d.toString();
   logStream.write(d);
+  if (s.includes('Server listening') || s.includes('listening on') || s.includes('ready')) {
+    libreChatStarted = true;
+  }
   if (s.includes('IP whitelist') || s.includes("isn't whitelisted") || s.includes('Could not connect to any servers')) {
     mongoIPError = true;
   }
@@ -53,34 +84,19 @@ proc.on('exit', (code) => {
     logLine('');
     logLine('  Render uses dynamic IPs. You must allow ALL IPs in Atlas:');
     logLine('');
-    logLine('  1. Go to: https://cloud.mongodb.com/v2/_clusters');
-    logLine('  2. Select your cluster (cluster0.y9osekz)');
-    logLine('  3. Sidebar → Network Access → Add IP Address');
-    logLine('  4. Click "ALLOW ACCESS FROM ANYWHERE" → 0.0.0.0/0');
-    logLine('  5. Confirm → wait 30s for Atlas to update');
-    logLine('  6. Render Dashboard → librechat-nhutcoder → Manual Deploy');
-    logLine('');
-    logLine('  After whitelist, LibreChat will auto-start successfully.');
+    logLine('  1. https://cloud.mongodb.com/v2/_clusters → cluster0.y9osekz');
+    logLine('  2. Network Access → Add IP Address');
+    logLine('  3. Click "ALLOW ACCESS FROM ANYWHERE" → 0.0.0.0/0');
+    logLine('  4. Wait 30s → Render Dashboard → Manual Deploy');
     logLine('═══════════════════════════════════════════════════════════════════');
   }
+  logLine('');
   logLine('=== Container staying alive for log retrieval ===');
+  // Only start fallback log server if LibreChat crashed
+  startLogServer();
 });
 
-// HTTP server
-const server = http.createServer((req, res) => {
-  if (req.url === '/health' || req.url === '/healthz') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('OK\n');
-    return;
-  }
-  let body = '(no log yet)';
-  try { body = fs.readFileSync(LOG, 'utf8'); } catch (e) {}
-  res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end(body);
+process.on('SIGTERM', () => {
+  proc.kill('SIGTERM');
+  process.exit(0);
 });
-
-server.listen(PORT, '0.0.0.0', () => {
-  logLine('Log+health server listening on ' + PORT);
-});
-
-process.on('SIGTERM', () => process.exit(0));
